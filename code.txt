@@ -1,0 +1,222 @@
+
+enable
+configure terminal
+vlan 1
+name Admin
+exit
+vlan 2
+name Servers
+exit
+vlan 3
+name manegment
+exit
+vlan 4
+name Wir
+exit
+enable
+configure terminal
+vlan 5
+name Accounting
+exit
+vlan 6
+name Cam
+exit
+vlan 7
+name HR
+exit
+vlan 8
+name IT
+exit
+enable
+configure terminal
+vlan 9
+name User9
+exit
+vlan 10
+name User10
+exit
+vlan 28
+name User28
+exit
+vlan 42
+name User42
+exit
+
+9-تكوين  VLANs على محولات الوصول
+enable
+configure terminal
+vlan 1
+name Admin
+exit
+•
+•
+•
+interface range fa0/3-24
+switchport mode access
+switchport access vlan 1
+exit
+interface range fa0/1-2
+switchport mode trunk
+switchport trunk allowed vlan 1,2,3,4,5,6,7,8,9,10,11,12,13,14-42
+exit
+10-محول الموارد البشرية (Access_Switch_HR)
+enable
+configure terminal
+vlan 7
+name HR
+exit
+interface range fa0/3-24
+switchport mode access
+switchport access vlan 7
+exit
+interface range fa0/1-2
+switchport mode trunk
+switchport trunk allowed vlan 1,2,3,4,5,6,7,8,9,10,11,12,13,14-42
+exit
+11-محول التكنولوجيا (Access_Switch_IT)
+enable
+configure terminal
+vlan 8
+name IT
+exit
+interface range fa0/3-24
+switchport mode access
+switchport access vlan 8
+exit
+interface range fa0/1-2
+switchport mode trunk
+switchport trunk allowed vlan 1,2,3,4,5,6,7,8,9,10,11,12,13,14-42
+exit
+12-محول االمستخدمين (Access_Switch_User)
+enable
+configure terminal
+vlan 9
+name User
+exit
+interface range fa0/3-24
+switchport mode access
+switchport access vlan 9
+exit
+interface range fa0/1-2
+switchport mode trunk
+switchport trunk allowed vlan 1,2,3,4,5,6,7,8,9,10,11,12,13,14-42
+exit
+13-تكوين منافذ Trunk على محولات التوزيع
+على   Dist_Switch_  ننفذ الأوامر التالية 
+enable
+configure terminal
+interface range fa0/3-10
+switchport mode trunk
+switchport trunk allowed vlan 1,2,3,4,5,6,7,8,9,10,11,12,13,14-42
+exit
+interface fa0/24
+switchport mode trunk
+switchport trunk allowed vlan 1,2,3,4,5,6,7,8,9,10,11,12,13,14-42
+exit
+14-تكوين عناوين IP
+تكوين عناوين IP على موجهات النواة
+Core_Router_1
+enable
+configure terminal
+interface GigabitEthernet0/0
+ip address 208.67.220.1 255.255.255.0
+no shutdown
+exit
+interface GigabitEthernet0/1
+ip address 10.0.0.1 255.255.255.252
+no shutdown
+exit
+interface GigabitEthernet0/2.1
+encapsulation dot1Q 1
+ip address 192.168.1.1 255.255.255.0
+no shutdown
+exit
+interface GigabitEthernet0/2.2
+encapsulation dot1Q 2
+ip address 192.168.2.1 255.255.255.0
+no shutdown
+exit
+interface GigabitEthernet0/2.3
+encapsulation dot1Q 3
+ip address 192.168.3.1 255.255.255.0
+no shutdown
+exit
+interface GigabitEthernet0/2.4
+encapsulation dot1Q 4
+ip address 192.168.4.1 255.255.255.0
+no shutdown
+exit
+interface GigabitEthernet0/2
+no shutdown
+exit
+15-تكوين عناوين IP على الخوادم
+DHCP_Server
+IP Address: 192.168.10.10
+Subnet Mask: 255.255.255.0
+Default Gateway: 192.168.10.1
+DNS_Server
+IP Address: 192.168.10.11
+Subnet Mask: 255.255.255.0
+Default Gateway: 192.168.10.1
+VPN_Server
+IP Address: 192.168.10.12
+Subnet Mask: 255.255.255.0
+Default Gateway: 192.168.10.1
+NTP_Server
+IP Address: 192.168.10.13
+Subnet Mask: 255.255.255.0
+Default Gateway: 192.168.10.1
+16-تكوين خدمة  DNS
+على DNS_Server، نكون خدمة DNS:
+أضف سجلات - A لجميع الخوادم والأجهزة الرئيسية
+أضف سجل - A للنطاق الداخلي "company.local"
+تكوين بروتوكول التوجيه . 
+على Core_Router_ نكون بروتوكول ،OSPF:
+
+enable
+configure terminal
+router ospf 1
+network 10.0.0.0 0.0.0.3 area 0
+network 192.168.10.0 0.0.0.255 area 0
+network 192.168.20.0 0.0.0.255 area 0
+network 192.168.30.0 0.0.0.255 area 0
+network 192.168.40.0 0.0.0.255 area 0
+exit
+17-تكوين الأمان 
+تكوينPort Security على محولات الوصول
+على كل محول وصول، ننفذ الأوامر التالية
+enable
+configure terminal
+interface range fa0/3-24
+switchport port-security
+switchport port-security maximum 1
+switchport port-security mac-address sticky
+switchport port-security violation shutdown
+exit
+تكوينACLs على موجهات النواة
+على Core_Router_ نكون قوائم التحكم في الوصول 
+enable
+configure terminal
+ip access-list extended GUEST_RESTRICT
+deny ip 192.168.40.0 0.0.0.255 192.168.10.0 0.0.0.255
+deny ip 192.168.40.0 0.0.0.255 192.168.20.0 0.0.0.255
+deny ip 192.168.40.0 0.0.0.255 192.168.30.0 0.0.0.255
+permit ip any any
+exit
+interface GigabitEthernet0/2.40
+ip access-group GUEST_RESTRICT in
+exit
+18-تكوين خدمة . VPN
+على VPN_Serverنكون خدمة VPN:
+بروتوكول - : SSL/TLS
+نطاق عناوين - IP 192.168.100.0/ للعملاء: 24
+مصادقة: اسم المستخدم وكلمة المرور -
+19-تكوين خدمة  NTP
+على NTP_Serverنكون خدمة NTP:
+تزامن الوقت مع خوادم - NTP الخارجية
+توفير خدمة - NTP لجميع أجهزة الشبكة
+
+20-اختبار الأداء والتوصيل
+
+نستخدم أوامر ping وtracert للتحقق من الاتصال بين الأجهزة داخل كل VLAN وبين VLANs المختلفة، كما تم التأكد من وصول الأجهزة إلى الخوادم بشكل صحيح.
+
